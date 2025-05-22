@@ -1,0 +1,52 @@
+<template>
+  <el-aside width="200px" class="sidebar-container">
+    <el-scrollbar>
+      <el-menu :default-openeds="['1', '2']" router>
+        <el-menu-item index="/dashboard/index">
+          <el-icon><Menu /></el-icon>
+          <span>仪表盘</span>
+        </el-menu-item>
+        <el-sub-menu index="1">
+          <template #title>
+            <el-icon><Setting /></el-icon>
+            <span>系统管理</span>
+          </template>
+          <el-menu-item index="/system/user">
+             <el-icon><User /></el-icon>
+            <span>用户管理</span>
+          </el-menu-item>
+        </el-sub-menu>
+        <el-sub-menu index="2">
+          <template #title>
+            <el-icon><Van /></el-icon>
+            <span>车管理</span>
+          </template>
+          <el-menu-item index="/vehicle/station">
+             <el-icon><Location /></el-icon>
+            <span>车站管理</span>
+          </el-menu-item>
+          <el-menu-item index="/vehicle/train-model">
+             <el-icon><TakeawayBox /></el-icon>
+            <span>车型管理</span>
+          </el-menu-item>
+        </el-sub-menu>
+      </el-menu>
+    </el-scrollbar>
+  </el-aside>
+</template>
+
+<script setup>
+// 导入 Element Plus 图标
+import { Menu, Setting, User, Van, Location, TakeawayBox } from '@element-plus/icons-vue'
+</script>
+
+<style scoped>
+.sidebar-container {
+  background-color: #f4f4f5; /* Light grey background */
+  height: 100%;
+}
+
+.el-menu {
+  border-right: none; /* Remove the default border */
+}
+</style> 
