@@ -1,10 +1,13 @@
-<script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
+<!--
+ * @Description: create by southernMD
+-->
 <template>
-  <router-view />
+    <router-view /> <!-- 或者你的应用主要内容 -->
 </template>
+
+<script setup lang="ts">
+
+</script>
 
 <style>
 /* Global styles can be added here */

@@ -49,6 +49,7 @@ declare module 'vue' {
     Navbar: typeof import('./components/layout/Navbar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SeatEditor: typeof import('./components/SeatEditor.vue')['default']
     Sidebar: typeof import('./components/layout/Sidebar.vue')['default']
   }
   export interface ComponentCustomProperties {

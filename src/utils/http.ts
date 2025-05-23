@@ -150,7 +150,6 @@ export const request = async <T>(url: string, options: RequestOptions = {}): Pro
     ...fetchOptions,
     headers
   };
-  
   // 处理请求参数
   if (params) {
     if (config.method === 'GET' || !config.method) {
@@ -167,6 +166,7 @@ export const request = async <T>(url: string, options: RequestOptions = {}): Pro
       }
     } else {
       // 对于非 GET 请求，将参数转换为 JSON 主体
+      console.log(params,"请求体");
       config.body = JSON.stringify(params);
     }
   }
