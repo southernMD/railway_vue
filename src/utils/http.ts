@@ -60,8 +60,8 @@ const refreshToken = async (): Promise<string> => {
 
   isRefreshing = true;
   try {
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (!refreshToken) {
+    const refresh = localStorage.getItem('refreshToken');
+    if (!refresh) {
       throw new Error('无刷新令牌');
     }
 
@@ -70,29 +70,26 @@ const refreshToken = async (): Promise<string> => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${refreshToken}`,
+        'Authorization': `Bearer ${refresh}`,
       },
     });
 
     if (!response.ok) {
-      debugger
       throw new Error('刷新令牌失败');
     }
 
-    const result: ApiResponse<{ token: string; refreshToken: string }> = await response.json();
-    
+    const result: ApiResponse<{ accessToken: string }> = await response.json();
     if (result.code !== 200) {
       throw new Error(result.message || '刷新令牌失败');
     }
 
     // 保存新的 token
-    const { token, refreshToken: newRefreshToken } = result.data;
-    localStorage.setItem('token', token);
-    localStorage.setItem('refreshToken', newRefreshToken);
+    const { accessToken } = result.data;
+    localStorage.setItem('token', accessToken);
 
     // 执行队列中的请求
-    onRefreshed(token);
-    return token;
+    onRefreshed(accessToken);
+    return accessToken;
   } catch (error) {
     // 刷新失败，清除所有令牌，并跳转到登录页
     localStorage.removeItem('token');
@@ -144,7 +141,10 @@ export const request = async <T>(url: string, options: RequestOptions = {}): Pro
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
-  
+  // let refresh = localStorage.getItem('refreshToken');
+  // if(refresh){
+  //   headers.set('Refresh-Token', `${refresh}`);
+  // }
   // 构建请求配置
   const config: RequestInit = {
     ...fetchOptions,

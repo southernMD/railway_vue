@@ -1,3 +1,6 @@
+/*
+ * @Description: create by southernMD
+ */
 import http from '@/utils/http'
 
 // 座位接口定义
@@ -28,9 +31,21 @@ export interface TrainModel {
   carriages: Carriage[]
 }
 
+export interface TrainModelSimple {
+  id: number,
+  modelName: string,
+  modelCode: string,
+  maxCapacity: number,
+  totalSeats: number
+}
+
 // 获取所有车型
 export function getTrainModels() {
   return http.get<TrainModel[]>('/train-models')
+}
+// 获取所有车型的简单信息
+export function getTrainModelsSimple() {
+  return http.get<TrainModelSimple[]>('/train-models/simple')
 }
 
 // 根据ID获取车型详情

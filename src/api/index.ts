@@ -1,6 +1,7 @@
 /*
  * @Description: create by southernMD
  */
+
 /**
  * API 接口导出文件
  */
@@ -9,14 +10,15 @@ import userApi from './user';
 import stationApi from './station';
 import carriagesApi from './carriages';
 import seatApi from './carriages';
-
+import trainStopApi from './trainStop';
 // 导出所有 API 接口
 export {
   authApi,
   userApi,
   stationApi,
   carriagesApi,
-  seatApi
+  seatApi,
+  trainStopApi
 };
 
 // 默认导出
@@ -25,5 +27,6 @@ export default {
   user: userApi,
   station: stationApi,
   carriages: carriagesApi,
-  seat: seatApi
+  seat: seatApi,
+  trainStop: trainStopApi
 }; 

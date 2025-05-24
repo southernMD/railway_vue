@@ -29,6 +29,10 @@
              <el-icon><TakeawayBox /></el-icon>
             <span>车型管理</span>
           </el-menu-item>
+          <el-menu-item index="/vehicle/train-schedule">
+             <el-icon><Calendar /></el-icon>
+            <span>车次管理</span>
+          </el-menu-item>
         </el-sub-menu>
       </el-menu>
     </el-scrollbar>
@@ -37,7 +41,7 @@
 
 <script setup>
 // 导入 Element Plus 图标
-import { Menu, Setting, User, Van, Location, TakeawayBox } from '@element-plus/icons-vue'
+import { Menu, Setting, User, Van, Location, TakeawayBox, Calendar } from '@element-plus/icons-vue'
 </script>
 
 <style scoped>

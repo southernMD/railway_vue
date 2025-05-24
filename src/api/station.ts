@@ -1,3 +1,6 @@
+/*
+ * @Description: create by southernMD
+ */
 /**
  * 车站管理相关的 API 接口
  */
@@ -32,7 +35,9 @@ export interface StationQueryParams {
 export const getStations = (params?: StationQueryParams): Promise<Station[]> => {
   return http.get('/station', { params })
 }
-
+export const getOpenStations = (params?: StationQueryParams): Promise<Station[]> => {
+  return http.get('/station/open', { params })
+}
 // 获取单个车站详情
 export const getStationById = (id: number): Promise<Station> => {
   return http.get(`/station/${id}`)
@@ -55,6 +60,7 @@ export const deleteStation = (id: number): Promise<null> => {
 
 export default {
   getStations,
+  getOpenStations,
   getStationById,
   createStation,
   updateStation,

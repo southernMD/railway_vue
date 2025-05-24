@@ -7,6 +7,7 @@ import TrainModelManagement from '../views/vehicle/TrainModelManagement.vue'
 import LoginRegister from '../views/LoginRegister.vue'
 import TempPage from '../views/TempPage.vue'
 import { ElMessage } from 'element-plus'
+import TrainScheduleManagement from '../views/vehicle/TrainScheduleManagement.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -71,6 +72,12 @@ const routes: Array<RouteRecordRaw> = [
         name: 'TrainModelManagement',
         component: TrainModelManagement,
         meta: { title: '车型管理', icon: 'TakeawayBox', requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'train-schedule',
+        name: 'TrainScheduleManagement',
+        component: TrainScheduleManagement,
+        meta: { title: '车次管理', icon: 'Calendar', requiresAuth: true, requiresAdmin: true }
       }
     ]
   }
