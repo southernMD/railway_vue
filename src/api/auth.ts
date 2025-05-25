@@ -5,10 +5,12 @@ import http from '@/utils/http';
 
 // 登录响应数据
 export interface LoginResponse {
+  userId: number;
   username: string;
   accessToken: string;
   refreshToken: string;
   admin: boolean;
+  email: string;
 }
 
 // 登录参数
@@ -32,6 +34,7 @@ export interface RegisterParams {
 }
 
 export interface RegisterResponse {
+  email: string,
   accessToken: string,
   refreshToken: string,
   userId: number,

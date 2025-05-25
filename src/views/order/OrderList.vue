@@ -12,16 +12,6 @@
         <el-form-item label="用户名">
           <el-input v-model="filterForm.username" placeholder="请输入用户名" clearable></el-input>
         </el-form-item>
-        <el-form-item label="订单状态">
-          <el-select v-model="filterForm.status" placeholder="全部状态" clearable style="width: 150px;">
-            <el-option
-              v-for="(text, value) in OrderStatusTextMap"
-              :key="value"
-              :label="text"
-              :value="Number(value)"
-            ></el-option>
-          </el-select>
-        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="fetchOrders">搜索</el-button>
           <el-button @click="resetFilter">重置</el-button>
@@ -55,19 +45,6 @@
         <el-table-column prop="totalAmount" label="金额" min-width="80">
           <template #default="{ row }">
             <span class="amount">¥{{ row.totalAmount.toFixed(2) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" min-width="100">
-          <template #default="{ row }">
-            <el-tag :type="OrderStatusTagTypeMap[row.status]" effect="light">
-              {{ OrderStatusTextMap[row.status] }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="paymentTime" label="支付时间" min-width="150">
-          <template #default="{ row }">
-            <span v-if="row.paymentTime">{{ formatDateTime(row.paymentTime) }}</span>
-            <span v-else class="no-data">-</span>
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" min-width="150">
@@ -175,7 +152,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue';
 import { Refresh } from '@element-plus/icons-vue';
-import { getOrders, Order, OrderStatus, OrderStatusTextMap, OrderStatusTagTypeMap } from '@/api/order';
+import { getOrders, Order } from '@/api/order';
 
 // 订单列表数据
 const orders = ref<Order[]>([]);
@@ -185,7 +162,6 @@ const loading = ref(false);
 const filterForm = reactive({
   orderNo: '',
   username: '',
-  status: null as number | null
 });
 
 // 根据筛选条件过滤订单
@@ -197,10 +173,6 @@ const filteredOrders = computed(() => {
     }
     // 用户名筛选
     if (filterForm.username && !order.user.username.toLowerCase().includes(filterForm.username.toLowerCase())) {
-      return false;
-    }
-    // 状态筛选
-    if (filterForm.status !== null && order.status !== filterForm.status) {
       return false;
     }
     return true;
@@ -223,7 +195,6 @@ const fetchOrders = async () => {
 const resetFilter = () => {
   filterForm.orderNo = '';
   filterForm.username = '';
-  filterForm.status = null;
   fetchOrders();
 };
 
@@ -239,15 +210,6 @@ const formatDateTime = (dateTimeStr: string | null | undefined): string => {
 onMounted(() => {
   fetchOrders();
 });
-
-// 订单状态选项
-const statusOptions = [
-  { value: OrderStatus.PENDING_PAYMENT, label: OrderStatusTextMap[OrderStatus.PENDING_PAYMENT] },
-  { value: OrderStatus.PAID, label: OrderStatusTextMap[OrderStatus.PAID] },
-  { value: OrderStatus.CANCELLED, label: OrderStatusTextMap[OrderStatus.CANCELLED] },
-  { value: OrderStatus.COMPLETED, label: OrderStatusTextMap[OrderStatus.COMPLETED] },
-  { value: OrderStatus.REFUNDED, label: OrderStatusTextMap[OrderStatus.REFUNDED] }
-];
 
 // 车票详情对话框
 const ticketDialogVisible = ref(false);

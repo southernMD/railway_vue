@@ -97,5 +97,10 @@ export default {
   // 删除车次 - DELETE /trains/{id} 删除列车记录
   deleteTrain(id: number) {
     return http.del<boolean>(`trains/${id}`)
+  },
+
+  //查询指定区间内车次
+  getTrainsByInterval(startStationId: number, endStationId: number,date:string) {
+    return http.get<Train[]>(`/trains/route?startStationId=${startStationId}&endStationId=${endStationId}&date=${date}`)
   }
 }

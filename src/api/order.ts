@@ -2,44 +2,8 @@
  * 订单相关接口
  */
 import { get, post, put, del } from '@/utils/http';
-
-/**
- * 订单状态枚举
- */
-export enum OrderStatus {
-  /** 待支付 */
-  PENDING_PAYMENT = 0,
-  /** 已支付 */
-  PAID = 1,
-  /** 已取消 */
-  CANCELLED = 2,
-  /** 已完成 */
-  COMPLETED = 3,
-  /** 已退款 */
-  REFUNDED = 4
-}
-
-/**
- * 订单状态文本映射
- */
-export const OrderStatusTextMap = {
-  [OrderStatus.PENDING_PAYMENT]: '待支付',
-  [OrderStatus.PAID]: '已支付',
-  [OrderStatus.CANCELLED]: '已取消',
-  [OrderStatus.COMPLETED]: '已完成',
-  [OrderStatus.REFUNDED]: '已退款'
-};
-
-/**
- * 订单状态标签类型映射
- */
-export const OrderStatusTagTypeMap = {
-  [OrderStatus.PENDING_PAYMENT]: 'warning',
-  [OrderStatus.PAID]: 'success',
-  [OrderStatus.CANCELLED]: 'info',
-  [OrderStatus.COMPLETED]: 'success',
-  [OrderStatus.REFUNDED]: 'info'
-};
+import { v4 as uuidv4 } from 'uuid'; // 导入uuid库用于生成唯一ID
+import { CreateTicketRequest } from './tickets';
 
 /**
  * 车票信息接口
@@ -77,11 +41,31 @@ export interface Order {
   orderNo: string;
   user: OrderUser;
   totalAmount: number;
-  status: OrderStatus;
-  paymentTime: string | null;
   tickets: Ticket[];
   createTime?: string;
   updateTime?: string;
+}
+
+/**
+ * 创建订单请求参数接口
+ */
+export interface CreateOrderParams {
+  userId: number;
+  totalAmount: number;
+  tickets: CreateTicketRequest[];
+  // 可以添加其他创建订单所需的参数，如车票信息等
+}
+
+/**
+ * 创建订单响应接口
+ */
+export interface CreateOrderResponse {
+  id: number;
+  orderNo: string;
+  userId: number;
+  totalAmount: number;
+  createTime: string;
+  updateTime: string;
 }
 
 /**
@@ -90,6 +74,26 @@ export interface Order {
  */
 export const getOrders = (): Promise<Order[]> => {
   return get('/orders');
+};
+
+/**
+ * 创建新订单
+ * @param params 创建订单所需参数
+ * @returns 创建的订单信息
+ */
+export const createOrder = (params: CreateOrderParams): Promise<CreateOrderResponse> => {
+  // 使用UUID生成订单号 (前8位即可，避免过长)
+  const orderNo = uuidv4().replace(/-/g, '').substring(0, 8).toUpperCase();
+  
+  // 构建请求体
+  const requestBody = {
+    orderNo,
+    userId: params.userId,
+    totalAmount: params.totalAmount,
+    tickets: params.tickets
+  };
+  
+  return post('/orders', requestBody);
 };
 
 // /**
@@ -121,6 +125,7 @@ export const getOrders = (): Promise<Order[]> => {
 
 export default {
   getOrders,
+  createOrder
   // getOrderById,
   // cancelOrder,
   // payOrder

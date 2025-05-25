@@ -121,6 +121,107 @@ const routes: Array<RouteRecordRaw> = [
         }
       }
     ]
+  },
+  // 用户模块路由配置
+  {
+    path: '/user',
+    component: () => import('@/components/user/UserLayout.vue'),
+    redirect: '/user/home',
+    meta: {
+      requiresAuth: true
+    },
+    children: [
+      {
+        path: 'home',
+        name: 'UserHome',
+        component: () => import('@/views/user/UserHome.vue'),
+        meta: {
+          title: '用户首页',
+          icon: 'House',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'profile',
+        name: 'UserProfile',
+        component: () => import('@/views/user/Profile.vue'),
+        meta: {
+          title: '个人资料',
+          icon: 'UserFilled',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'tickets',
+        name: 'TicketSearch',
+        component: () => import('@/views/user/TicketSearch.vue'),
+        meta: {
+          title: '车票查询',
+          icon: 'Search',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'orders',
+        name: 'UserOrders',
+        component: () => import('@/views/user/order/OrderList.vue'),
+        meta: {
+          title: '我的订单',
+          icon: 'Tickets',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'order/detail/:id',
+        name: 'OrderDetail',
+        component: () => import('@/views/user/order/OrderDetail.vue'),
+        meta: {
+          title: '订单详情',
+          requiresAuth: true,
+          hidden: true
+        }
+      },
+      {
+        path: 'order/change/:id',
+        name: 'TicketChange',
+        component: () => import('@/views/user/TicketChange.vue'),
+        meta: {
+          title: '车票改签',
+          requiresAuth: true,
+          hidden: true
+        }
+      },
+      {
+        path: 'order/refund/:id',
+        name: 'TicketRefund',
+        component: () => import('@/views/user/TicketRefund.vue'),
+        meta: {
+          title: '车票退票',
+          requiresAuth: true,
+          hidden: true
+        }
+      },
+      {
+        path: 'orders/changes',
+        name: 'userChangeRecords',
+        component: () => import('@/views/order/ChangeRecords.vue'),
+        meta: {
+          title: '改签记录',
+          requiresAuth: true,
+          hidden: true
+        }
+      },
+      {
+        path: 'orders/waitlist',
+        name: 'userOrderWaitlist',
+        component: () => import('@/views/user/order/OrderWaitlist.vue'),
+        meta: {
+          title: '候补订单',
+          requiresAuth: true,
+          hidden: true
+        }
+      }
+    ]
   }
   // 后续会在这里添加更多包含二级菜单的路由
 ]
@@ -153,13 +254,13 @@ router.beforeEach((to, from, next) => {
     // 如果路由需要认证且用户未登录，则重定向到登录页
     next({ path: '/login', query: { redirect: to.fullPath } });
   } else if (requiresAdmin && !isAdmin) {
-    // 如果路由需要管理员权限但用户不是管理员，则重定向到临时页面
+    // 如果路由需要管理员权限但用户不是管理员，则重定向到用户首页
     ElMessage.error('您没有权限访问该页面');
-    next({ path: '/temp-page' });
+    next({ path: '/user/home' });
   } else if (to.path === '/login' && token) {
     // 如果用户已登录但尝试访问登录页
-    // 根据用户角色决定跳转到仪表盘或临时页面
-    next({ path: isAdmin ? '/dashboard/index' : '/temp-page' });
+    // 根据用户角色决定跳转到仪表盘或用户首页
+    next({ path: isAdmin ? '/dashboard/index' : '/user/home' });
   } else {
     // 其他情况正常放行
     next();

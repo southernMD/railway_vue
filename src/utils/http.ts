@@ -190,7 +190,7 @@ export const request = async <T>(url: string, options: RequestOptions = {}): Pro
     // 检查响应状态
     if (!response.ok) {
       // 如果是 401 未授权且不是刷新令牌请求，尝试刷新令牌
-      if (response.status === 403 && !skipRefreshToken && !url.includes('/auth/login') && !url.includes('/auth/refresh')) {
+      if (response.status === 401 && !skipRefreshToken && !url.includes('/auth/login') && !url.includes('/auth/refresh')) {
         try {
           // 尝试刷新令牌
           token = await refreshToken();

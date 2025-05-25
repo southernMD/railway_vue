@@ -347,8 +347,10 @@ const handleLogin = async () => {
         localStorage.setItem('token', result.accessToken)
         localStorage.setItem('refreshToken', result.refreshToken)
         localStorage.setItem('userInfo', JSON.stringify({
+          userId: result.userId,
           username: result.username,
-          isAdmin: isRealAdmin && loginForm.value.isAdmin // 只有真实管理员且勾选了管理员登录才设置为管理员
+          isAdmin: isRealAdmin && loginForm.value.isAdmin, // 只有真实管理员且勾选了管理员登录才设置为管理员
+          email: result.email
         }))
         
         // 登录成功提示
@@ -356,7 +358,7 @@ const handleLogin = async () => {
         ElMessage.success(`以${role}身份登录成功`)
         
         // 判断跳转路径
-        let redirectPath = '/temp-page'; // 默认为临时页面
+        let redirectPath = '/user/home'; // 默认为用户首页，不再跳转到临时页面
         
         // 如果是管理员并且勾选了管理员登录选项，则跳转到仪表盘
         if (isRealAdmin && loginForm.value.isAdmin) {
@@ -395,11 +397,13 @@ const handleRegister = async () => {
         localStorage.setItem('token', result.accessToken)
         localStorage.setItem('refreshToken', result.refreshToken)
         localStorage.setItem('userInfo', JSON.stringify({
+          userId: result.userId,
           username: result.username,
-          isAdmin: false 
+          isAdmin: false,
+          email: result.email
         }))
         
-        router.push('/temp-page');
+        router.push('/user/home');
         
       } catch (error) {
         // HTTP 工具已经处理了错误提示，这里不需要重复处理
