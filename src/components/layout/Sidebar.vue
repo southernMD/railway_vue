@@ -34,6 +34,24 @@
             <span>车次管理</span>
           </el-menu-item>
         </el-sub-menu>
+        <el-sub-menu index="/order">
+          <template #title>
+            <el-icon><Tickets /></el-icon>
+            <span>订单管理</span>
+          </template>
+          <el-menu-item index="/order/list">
+            <el-icon><List /></el-icon>
+            <span>订单一览</span>
+          </el-menu-item>
+          <el-menu-item index="/order/waitlist">
+            <el-icon><Timer /></el-icon>
+            <span>订单候补</span>
+          </el-menu-item>
+          <el-menu-item index="/order/change-records">
+            <el-icon><SetUp /></el-icon>
+            <span>改签记录</span>
+          </el-menu-item>
+        </el-sub-menu>
       </el-menu>
     </el-scrollbar>
   </el-aside>
@@ -41,7 +59,7 @@
 
 <script setup>
 // 导入 Element Plus 图标
-import { Menu, Setting, User, Van, Location, TakeawayBox, Calendar } from '@element-plus/icons-vue'
+import { Menu, Setting, User, Van, Location, TakeawayBox, Calendar, Tickets, List, Timer, SetUp } from '@element-plus/icons-vue'
 </script>
 
 <style scoped>

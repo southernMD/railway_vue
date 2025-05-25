@@ -2,7 +2,7 @@
   <el-dialog
     v-model="visibleMy"
     :title="`编辑座位 - 车厢${carriageNumber}`"
-    width="950px"
+    width="1200px"
     :before-close="handleClose"
   >
     <div class="seats-container">
@@ -10,6 +10,9 @@
         <div class="seat-controls">
         <div class="seat-info">
           <span>车厢类型: {{ getCarriageTypeName(carriageType) }}</span>
+            
+
+            
             <el-button 
               type="primary" 
               size="small" 
@@ -19,6 +22,15 @@
               添加座位
             </el-button>
             
+            <el-button 
+              type="primary" 
+              size="small" 
+              @click="refreshSeats"
+              :loading="refreshLoading"
+            >
+              刷新座位
+            </el-button>
+
             <el-button 
               :type="selectionMode ? 'success' : 'info'" 
               size="small" 
@@ -48,15 +60,17 @@
             >
               清空
             </el-button>
-            <el-button 
-              type="danger" 
-              size="small" 
-              @click="batchDeleteSeats" 
-              :disabled="selectedSeats.length === 0"
-              class="delete-seat-btn"
-            >
-              删除座位({{ selectedSeats.length }})
-            </el-button>
+            <div class="seat-actions">
+              <el-button 
+                type="danger" 
+                size="small" 
+                @click="batchDeleteSeats" 
+                :disabled="selectedSeats.length === 0"
+                class="delete-seat-btn"
+              >
+                <el-icon><Delete /></el-icon> 删除座位({{ selectedSeats.length }})
+              </el-button>
+            </div>
           </div>
         </div>
         <div class="seat-legend">
@@ -461,13 +475,14 @@
     :append-to-body="true"
   >
     <el-form :model="addLockForm" :rules="addLockRules" ref="addLockFormRef" label-width="100px">
-      <!-- 改成下拉菜单选择锁定类型 -->
-      <el-form-item label="锁定类型" prop="type">
-        <el-select v-model="addLockForm.type" placeholder="请选择锁定类型">
-          <el-option :value="0" label="维护"></el-option>
-          <el-option :value="1" label="占用"></el-option>
-          <el-option :value="2" label="取消"></el-option>
-        </el-select>
+      <!-- 修改后的只读输入框 -->
+      <el-form-item label="锁定类型">
+        <el-input
+          value="维护"
+          readonly
+          class="lock-type-input"
+        >
+        </el-input>
       </el-form-item>
       
       <el-form-item label="开始时间" prop="lockStart">
@@ -514,6 +529,8 @@
 import { ref, computed, watch } from "vue";
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus';  // 添加ElMessageBox导入
 import seatApi from '../api/seat'; // 导入座位API
+import { Refresh, Delete } from '@element-plus/icons-vue'
+import { getSeatsByCarriageId } from '@/api/seat' // 确保导入了正确的API函数
 
 // 简化props，只保留显示相关的属性
 const props = defineProps({
@@ -1554,6 +1571,49 @@ const isNotStartedYet = (lock) => {
   
   return now < lockStart;
 };
+
+// 添加刷新状态
+const refreshLoading = ref(false)
+
+// 刷新座位函数
+const refreshSeats = async () => {
+  if (!carriageId.value) {
+    ElMessage.warning('无法获取车厢信息')
+    return
+  }
+  
+  refreshLoading.value = true
+  try {
+    // 调用API获取最新的座位信息
+    const latestSeats = await seatApi.getSeatsByCarriageId(carriageId.value)
+    
+    // 更新当前组件的座位数据
+    if (Array.isArray(latestSeats)) {
+      // 更新父组件的carriage.seats数据
+      props.carriage.seats = latestSeats
+      
+      // 更新临时座位数组为空，因为刷新后都是来自服务器的数据
+      tempSeats.value = []
+      
+      // 清空选中状态
+      if (selectionMode.value) {
+        selectedSeats.value = []
+      }
+      
+      // 发出更新事件，通知父组件数据已更新
+      emit('update:initialSeats', latestSeats)
+      
+      ElMessage.success('座位信息已刷新')
+    } else {
+      ElMessage.warning('获取座位信息失败')
+    }
+  } catch (error) {
+    console.error('刷新座位失败:', error)
+    ElMessage.error('刷新座位失败: ' + (error.message || '未知错误'))
+  } finally {
+    refreshLoading.value = false
+  }
+}
 </script>
   
   <style scoped>
@@ -1905,5 +1965,27 @@ const isNotStartedYet = (lock) => {
 .button-group .el-button--small {
   padding: 5px 10px;
   font-size: 12px;
+}
+
+/* 添加样式 */
+.lock-type-input {
+  width: 100%;
+}
+
+.lock-type-input :deep(.el-input__inner) {
+  background-color: #f5f7fa;
+  cursor: not-allowed;
+}
+
+.lock-type-tip {
+  color: #909399;
+  font-size: 12px;
+}
+
+/* 添加样式 */
+.seat-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
 }
 </style>

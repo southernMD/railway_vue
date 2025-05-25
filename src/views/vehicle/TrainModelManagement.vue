@@ -309,8 +309,9 @@
       v-model:visible="seatEditorVisible"
       :carriage="currentCarriage"
       :model="currentModel"
-      :initialSeats="currentSeats"
+      :initialSeats="currentCarriage?.seats || []"
       @save="saveSeatChanges"
+      @update:initialSeats="handleSeatUpdate"
       @close="closeSeatEditor"
     />
   </div>
@@ -787,10 +788,12 @@ const submitCarriageForm = async () => {
     
     // 创建模型的深拷贝
     const updatedModel = JSON.parse(JSON.stringify(models.value[modelIndex]))
-    
     // 添加新车厢到车厢列表
     if (!updatedModel.carriages) {
       updatedModel.carriages = []
+    }
+    if(createdCarriage.seats === null){
+      createdCarriage.seats = []
     }
     updatedModel.carriages.push(createdCarriage)
     
@@ -974,11 +977,12 @@ onMounted(() => {
 const seatEditorVisible = ref(false)
 const currentSeats = ref([])
 const currentModel = ref()
-const currentCarriage = ref()
+const currentCarriage = ref([])
 // 打开座位编辑器
 const openSeatEditor = (model, carriage) => {
   currentModel.value = model
   currentCarriage.value = carriage
+  currentModelId.value = model.id
   seatEditorVisible.value = true
 }
 
@@ -1026,6 +1030,33 @@ const saveSeatChanges = async (data) => {
     ElMessage.error('更新座位失败: ' + (error.message || '未知错误'))
   } finally {
     loading.value = false
+  }
+}
+
+// 添加initialSeats更新的处理函数
+const handleSeatUpdate = (updatedSeats) => {
+  if (currentCarriage.value && currentModel.value) {
+    // 更新当前车厢的座位数据
+    currentCarriage.value.seats = updatedSeats
+    
+    // 更新模型中对应车厢的座位数据
+    const modelIndex = models.value.findIndex(m => m.id === currentModel.value.id)
+    if (modelIndex !== -1) {
+      const carriageIndex = models.value[modelIndex].carriages.findIndex(
+        c => c.id === currentCarriage.value.id
+      )
+      
+      if (carriageIndex !== -1) {
+        // 创建模型的深拷贝
+        const updatedModel = JSON.parse(JSON.stringify(models.value[modelIndex]))
+        
+        // 更新座位数据
+        updatedModel.carriages[carriageIndex].seats = updatedSeats
+        
+        // 更新模型
+        models.value.splice(modelIndex, 1, updatedModel)
+      }
+    }
   }
 }
 </script>
@@ -1167,5 +1198,16 @@ const saveSeatChanges = async (data) => {
   width: 100%;
   display: flex;
   justify-content: flex-end;
+}
+
+.lock-type-fixed {
+  display: flex;
+  align-items: center;
+}
+
+.lock-type-tip {
+  margin-left: 10px;
+  color: #909399;
+  font-size: 12px;
 }
 </style> 

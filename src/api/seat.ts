@@ -1,9 +1,6 @@
 /*
  * @Description: create by southernMD
  */
-/**
- * @Description: create by southernMD
- */
 import http from '../utils/http'
 
 export type Seat = {
@@ -46,6 +43,13 @@ export const cancelSeatLock = (lockId: number) => {
 export const finishSeatLock = (lockId: number) => {
   return http.put(`/seat-locks/${lockId}`);
 };
+/**
+ * 查询指定车厢的所有座位 
+ * 
+*/
+export const getSeatsByCarriageId = (carriageId: number) => {
+  return http.get(`/seats/carriage/${carriageId}`);
+};
 
 
 // 更新导出
@@ -54,5 +58,6 @@ export default {
   batchDeleteSeats,
   createSeatLock,
   cancelSeatLock,
-  finishSeatLock 
+  finishSeatLock,
+  getSeatsByCarriageId
 };

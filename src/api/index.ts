@@ -9,8 +9,12 @@ import authApi from './auth';
 import userApi from './user';
 import stationApi from './station';
 import carriagesApi from './carriages';
-import seatApi from './carriages';
+import seatApi from './seat';
 import trainStopApi from './trainStop';
+import order from './order';
+import waitingOrdersApi from './waiting-orders';
+import changeRecordsApi from './change-records';
+
 // 导出所有 API 接口
 export {
   authApi,
@@ -18,7 +22,10 @@ export {
   stationApi,
   carriagesApi,
   seatApi,
-  trainStopApi
+  trainStopApi,
+  order,
+  waitingOrdersApi,
+  changeRecordsApi
 };
 
 // 默认导出
@@ -28,5 +35,8 @@ export default {
   station: stationApi,
   carriages: carriagesApi,
   seat: seatApi,
-  trainStop: trainStopApi
+  trainStop: trainStopApi,
+  order: order,
+  waitingOrders: waitingOrdersApi,
+  changeRecords: changeRecordsApi
 }; 

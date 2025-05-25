@@ -80,6 +80,47 @@ const routes: Array<RouteRecordRaw> = [
         meta: { title: '车次管理', icon: 'Calendar', requiresAuth: true, requiresAdmin: true }
       }
     ]
+  },
+  {
+    path: '/order',
+    component: Layout,
+    meta: {
+      title: '订单管理',
+      icon: 'Tickets',
+      requiresAuth: true
+    },
+    children: [
+      {
+        path: 'list',
+        name: 'OrderList',
+        component: () => import('@/views/order/OrderList.vue'),
+        meta: {
+          title: '订单一览',
+          icon: 'List',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'waitlist',
+        name: 'OrderWaitlist',
+        component: () => import('@/views/order/OrderWaitlist.vue'),
+        meta: {
+          title: '订单候补',
+          icon: 'Timer',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'change-records',
+        name: 'ChangeRecords',
+        component: () => import('@/views/order/ChangeRecords.vue'),
+        meta: {
+          title: '改签记录',
+          icon: 'SetUp',
+          requiresAuth: true
+        }
+      }
+    ]
   }
   // 后续会在这里添加更多包含二级菜单的路由
 ]

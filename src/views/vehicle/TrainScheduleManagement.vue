@@ -1176,7 +1176,15 @@ const confirmEdit = async (train,trainId) => {
   
   // 打印整个列表模拟提交表单
   console.log('提交更新后的停靠站列表:',train.trainStops,trainId)
-  const hasStationIdTrainStops = train.trainStops.map(item => { return {...item,stationId:item.station.id}})
+  const hasStationIdTrainStops = train.trainStops.map(item => {
+    if(typeof item.id === 'string' && item.id.includes('templ')){
+      const t = {...item,stationId:item.station.id,}
+      delete t.id
+      return t
+    }else{
+      return {...item,stationId:item.station.id}
+    }
+  })
   await trainStopApi.batchUpdateTrainStops(hasStationIdTrainStops, trainId)
 
   ElMessage.success('停靠站更新成功')
@@ -1400,11 +1408,12 @@ const initSortableForTrain = (trainId) => {
           const stopToMove2 = copyMiddleStops[adjustedNewIndex]
           const index1 = copyMiddleStops.findIndex(s => s.id === stopToMove.id)
           const index2 = copyMiddleStops.findIndex(s => s.id === stopToMove2.id)
+          console.log(index1,index2,"index1,index2");
           console.log('移动站点:', stopToMove, '从位置', adjustedOldIndex + 1, '到位置', adjustedNewIndex + 1)
-          middleStops[index1] = stopToMove2
-          middleStops[index2] = stopToMove
+          middleStops[index1] = reactive(stopToMove2)
+          middleStops[index2] = reactive(stopToMove)
           train.trainStops = middleStops
-
+          console.log(train.trainStops);
           reorderAllStops(train)
           // 打印更新后的站点信息
           console.log('更新后的站点信息:', getStopsWithStartEnd(train))
@@ -1681,6 +1690,7 @@ const submitStopForm = async () => {
       
       // 创建新站点对象
       const newStop = reactive({
+        id:`templ-${new Date().getTime()}`,
         trainId: train.id,
         station: selectedStation,
         sequence: stopForm.sequence, // 暂时使用表单中的序号
