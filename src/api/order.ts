@@ -96,11 +96,18 @@ export const createOrder = (params: CreateOrderParams): Promise<CreateOrderRespo
   return post('/orders', requestBody);
 };
 
-// /**
-//  * 获取订单详情
-//  * @param id 订单ID
-//  * @returns 订单详情
-//  */
+/***
+ * 获取指定用户订单
+ */
+export const getUserOrders = (userId: number): Promise<any[]> => {
+  return get(`/orders/user?userId=${userId}`);
+};
+
+/**
+ * 获取订单详情
+ * @param id 订单ID
+ * @returns 订单详情
+ */
 // export const getOrderById = (id: number): Promise<Order> => {
 //   return get(`/orders/${id}`);
 // };

@@ -2,6 +2,7 @@
  * @Description: create by southernMD
  */
 import { get, post, put, del } from '@/utils/http';
+import { CreateTicketRequest } from './tickets';
 
 // 基础实体类型定义
 export interface BaseEntity {
@@ -141,7 +142,12 @@ export interface ChangeRecordQueryParams {
   startDate?: string;
   endDate?: string;
 }
-
+export interface CreateChangeRecord {
+  ticketId: number;
+  newTicket:CreateTicketRequest ;
+  orderId: number;
+  userId: number;
+}
 // 获取改签记录列表
 export const getChangeRecords = (params?: ChangeRecordQueryParams) => {
   return get<ChangeRecord[]>('/change-records', params);
@@ -160,6 +166,10 @@ export const updateChangeRecordStatus = (id: number, status: number, reason?: st
 // 取消改签
 export const cancelChangeRecord = (id: number, reason: string) => {
   return put<ChangeRecord>(`/change-records/${id}/cancel`, { reason });
+};
+
+export const createChangeRecord = (changeRecord: CreateChangeRecord) => {
+  return post<CreateChangeRecord>('/change-records', changeRecord);
 };
 
 // 导出改签记录相关的API

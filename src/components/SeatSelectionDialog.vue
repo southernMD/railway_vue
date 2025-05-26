@@ -7,8 +7,8 @@
     class="seat-selection-dialog"
   >
     <div v-loading="loading" class="seat-selection-container">
-      <!-- 修改乘客选择区域，添加空数据提示 -->
-      <div class="passenger-selection">
+      <!-- 乘客选择区域 - 仅在非单乘客模式下显示 -->
+      <div class="passenger-selection" v-if="!props.singlePassengerMode">
         <div class="section-title">选择乘客</div>
         <div class="passenger-list" v-loading="passengersLoading">
           <template v-if="passengers.length > 0">
@@ -44,8 +44,19 @@
         </div>
       </div>
 
+      <!-- 单乘客模式（改签）下显示乘客信息 -->
+      <div class="single-passenger-info" v-if="props.singlePassengerMode && props.passengerInfo">
+        <div class="section-title">乘客信息</div>
+        <div class="passenger-detail">
+          <span class="passenger-name">{{ props.passengerInfo.realName }}</span>
+          <el-tag size="small" :type="getPassengerTagType(props.passengerInfo.passengerType)">
+            {{ getPassengerTypeName(props.passengerInfo.passengerType) }}
+          </el-tag>
+        </div>
+      </div>
+
       <!-- 修改座位选择状态，添加返回上一位乘客按钮 -->
-      <div class="seat-selection-status" v-if="isSelectingSeats">
+      <div class="seat-selection-status" v-if="isSelectingSeats && !props.singlePassengerMode && selectedPassengers.length > 1">
         <div class="current-passenger">
           当前为 <span class="passenger-name">{{ currentPassenger.realName }}</span> 选座
           ({{ currentPassengerIndex + 1 }}/{{ selectedPassengers.length }})
@@ -469,7 +480,7 @@
         <div class="info-content">
           {{ selectedSeatInfo }}
         </div>
-        <div class="passenger-actions" v-if="currentPassengerIndex < selectedPassengers.length - 1">
+        <div class="passenger-actions" v-if="!props.singlePassengerMode && currentPassengerIndex < selectedPassengers.length - 1">
           <el-button type="primary" size="small" @click="nextPassenger">
             下一位乘客
           </el-button>
@@ -477,7 +488,7 @@
       </div>
 
       <!-- 所有乘客选座完成后的汇总 -->
-      <div class="all-selections-summary" v-if="allSelectionsComplete">
+      <div class="all-selections-summary" v-if="allSelectionsComplete && !props.singlePassengerMode && selectedPassengers.length > 1">
         <div class="summary-title">所有乘客座位选择完成</div>
         <el-table :data="passengerSelections" stripe style="width: 100%">
           <el-table-column label="乘客姓名" prop="passenger.realName" />
@@ -545,7 +556,10 @@ const props = defineProps({
   hasFirstClassSeats: Boolean,
   hasSecondClassSeats: Boolean,
   hasNoSeats: Boolean,
-  prices: Object
+  prices: Object,
+  defaultSeatType: String,     // 默认选择的座位类型
+  singlePassengerMode: Boolean, // 是否为单乘客模式
+  passengerInfo: Object        // 单乘客信息（改签时使用）
 });
 
 const emit = defineEmits(["update:visible", "select-seat", "cancel"]);
@@ -570,7 +584,7 @@ const selectedPassengerIds = ref([]);
 const selectedPassengers = ref([]);
 const currentPassengerIndex = ref(0);
 const passengerSelections = ref([]);
-const isSelectingSeats = ref(false);
+const isSelectingSeats = ref(true);
 const selectingCompleted = ref(false);
 
 // 获取当前乘客
@@ -589,14 +603,17 @@ const hasPassengersSelected = computed(() => {
 
 // 判断是否可以确认提交
 const canConfirm = computed(() => {
-  // 如果没有选择乘客，不能提交
-  if (selectedPassengers.value.length === 0) return false;
-  
-  // 如果正在选座过程中且当前乘客未选择座位，不能提交
-  if (isSelectingSeats.value && !allSelectionsComplete.value) return false;
-  
-  // 如果所有乘客都完成了选座，可以提交
-  return allSelectionsComplete.value;
+  if (props.singlePassengerMode) {
+    // 单乘客模式：只要有选座就可以确认
+    return selectedSeat.value || selectedNoSeat.value;
+  } else {
+    // 普通购票模式：所有乘客都必须选座
+    if (!selectedPassengers.value || selectedPassengers.value.length === 0) {
+      return false;
+    }
+    // 检查是否所有乘客都已选座
+    return passengerSelections.value.length === selectedPassengers.value.length;
+  }
 });
 
 // 判断是否所有乘客都完成了选座
@@ -1100,26 +1117,39 @@ const selectNoSeat = () => {
 
 // 确认选座
 const handleConfirm = () => {
-  if (!isSelectingSeats.value || selectedPassengers.value.length === 0) {
-    ElMessage.warning("请先选择乘客");
-    return;
+  if (props.singlePassengerMode) {
+    if (!selectedSeat.value && !selectedNoSeat.value) {
+      ElMessage.warning("请选择座位");
+      return;
+    }
+    
+    let price = 0;
+    switch(activeSeatType.value) {
+      case 'business': price = props.prices.businessPrice; break;
+      case 'firstClass': price = props.prices.firstClassPrice; break;
+      case 'secondClass': price = props.prices.secondClassPrice; break;
+      case 'noSeat': price = props.prices.noSeatPrice; break;
+    }
+    
+    const selection = [{
+      passenger: props.passengerInfo,
+      seat: selectedNoSeat.value ? null : selectedSeat.value,
+      seatType: selectedNoSeat.value ? "noSeat" : activeSeatType.value,
+      price: price
+    }];
+    
+    emit("select-seat", selection);
+  } else {
+    // 多乘客模式：返回所有乘客的选择
+    if (passengerSelections.value.length === 0) {
+      ElMessage.warning("请至少为一位乘客选择座位");
+      return;
+    }
+    
+    emit("select-seat", passengerSelections.value);
   }
   
-  // 如果当前还有未保存的乘客选择，先保存
-  if (currentPassengerIndex.value < selectedPassengers.value.length && 
-      (selectedSeat.value || selectedNoSeat.value)) {
-    saveCurrentPassengerSelection();
-  }
-  
-  // 检查是否所有乘客都选择了座位
-  if (passengerSelections.value.length !== selectedPassengers.value.length) {
-    ElMessage.warning("请为所有乘客选择座位");
-    return;
-  }
-  
-  // 发送所有乘客的座位选择
-  emit("select-seat", passengerSelections.value);
-//   dialogVisible.value = false;
+  dialogVisible.value = false;
 };
 
 // 取消选座
@@ -1143,14 +1173,6 @@ watch(
       loading.value = true;
       selectedSeat.value = null;
       selectedNoSeat.value = false;
-      selectedPassengerIds.value = [];
-      selectedPassengers.value = [];
-      passengerSelections.value = [];
-      currentPassengerIndex.value = 0;
-      isSelectingSeats.value = false;
-      
-      // 加载乘客数据
-      await loadPassengers();
       
       // 加载车型数据
       if (props.modelId) {
@@ -1167,6 +1189,54 @@ watch(
     }
   }
 );
+
+// 在激活座位类型更改时设置默认值
+watch(() => props.defaultSeatType, (newVal) => {
+  if (newVal) {
+    activeSeatType.value = newVal;
+    
+    // 延迟设置车厢选择，确保座位类型的车厢列表已加载
+    setTimeout(() => {
+      // 获取当前座位类型的第一个车厢
+      const carriages = getCarriagesOfType(
+        newVal === 'business' ? 0 : 
+        newVal === 'firstClass' ? 1 : 
+        newVal === 'secondClass' ? 2 : -1
+      );
+      
+      if (carriages.length > 0) {
+        activeCarriage.value = String(carriages[0].id);
+      }
+    }, 100);
+  }
+}, { immediate: true });
+
+// 在单乘客模式下初始化
+onMounted(async () => {
+  if (props.singlePassengerMode && props.passengerInfo) {
+    // 直接跳过乘客选择步骤
+    isSelectingSeats.value = true;
+    
+    // 使用提供的乘客信息
+    selectedPassengers.value = [props.passengerInfo];
+    currentPassengerIndex.value = 0;
+    
+    // 设置激活的座位类型
+    activeSeatType.value = props.defaultSeatType || getDefaultSeatType();
+  } else if (!props.singlePassengerMode) {
+    // 普通购票模式，加载乘客列表
+    await loadPassengers();
+  }
+});
+
+// 添加一个新函数，根据车厢可用性获取默认座位类型
+const getDefaultSeatType = () => {
+  if (props.hasBusinessSeats) return 'business';
+  if (props.hasFirstClassSeats) return 'firstClass';
+  if (props.hasSecondClassSeats) return 'secondClass';
+  if (props.hasNoSeats) return 'noSeat';
+  return 'secondClass'; // 默认二等座
+};
 </script>
   
 <style scoped>
@@ -1410,13 +1480,25 @@ watch(
   width: 150px;
 }
 
-/* 添加乘客选择相关样式 */
-.passenger-selection {
+/* 添加单乘客信息显示样式 */
+.single-passenger-info {
   border: 1px solid #e4e7ed;
   border-radius: 4px;
   padding: 15px;
   margin-bottom: 15px;
-  background-color: #f8f9fa;
+  background-color: #f0f9eb;
+}
+
+.passenger-detail {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.passenger-name {
+  font-weight: bold;
+  font-size: 16px;
+  color: #303133;
 }
 
 .section-title {
@@ -1424,67 +1506,6 @@ watch(
   margin-bottom: 10px;
   font-size: 14px;
   color: #606266;
-}
-
-.passenger-list {
-  margin-bottom: 10px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.passenger-list .el-checkbox {
-  margin-right: 15px;
-  margin-bottom: 5px;
-}
-
-.passenger-selection-footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 10px;
-}
-
-.seat-selection-status {
-  margin-bottom: 10px;
-  padding: 10px;
-  border-radius: 4px;
-  background-color: #ecf5ff;
-  border: 1px solid #d9ecff;
-}
-
-.current-passenger {
-  font-size: 14px;
-  margin-bottom: 10px;
-}
-
-.passenger-name {
-  font-weight: bold;
-  color: #409eff;
-}
-
-.seat-selection-progress {
-  margin-top: 10px;
-}
-
-.all-selections-summary {
-  margin-top: 20px;
-  padding: 10px;
-  border-radius: 4px;
-  background-color: #f0f9eb;
-  border: 1px solid #e1f3d8;
-}
-
-.summary-title {
-  font-weight: bold;
-  margin-bottom: 10px;
-  font-size: 14px;
-  color: #67c23a;
-}
-
-.passenger-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 10px;
 }
 
 /* 添加或修改乘客相关样式 */
@@ -1506,5 +1527,26 @@ watch(
 .empty-passenger-text {
   margin-bottom: 15px;
   color: #909399;
+}
+
+.all-selections-summary {
+  margin-top: 20px;
+  padding: 10px;
+  border-radius: 4px;
+  background-color: #f0f9eb;
+  border: 1px solid #e1f3d8;
+}
+
+.summary-title {
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #67c23a;
+}
+
+.passenger-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
 }
 </style>

@@ -43,6 +43,7 @@ declare module 'vue' {
     ElMenu: typeof import('element-plus/es')['ElMenu']
     ElMenuItem: typeof import('element-plus/es')['ElMenuItem']
     ElOption: typeof import('element-plus/es')['ElOption']
+    ElPageHeader: typeof import('element-plus/es')['ElPageHeader']
     ElPagination: typeof import('element-plus/es')['ElPagination']
     ElRadio: typeof import('element-plus/es')['ElRadio']
     ElRadioButton: typeof import('element-plus/es')['ElRadioButton']
@@ -69,6 +70,7 @@ declare module 'vue' {
     SeatEditor: typeof import('./components/SeatEditor.vue')['default']
     SeatSelectionDialog: typeof import('./components/SeatSelectionDialog.vue')['default']
     Sidebar: typeof import('./components/layout/Sidebar.vue')['default']
+    TicketChange: typeof import('./components/TicketChange.vue')['default']
     UserLayout: typeof import('./components/user/UserLayout.vue')['default']
     UserSidebar: typeof import('./components/user/UserSidebar.vue')['default']
   }

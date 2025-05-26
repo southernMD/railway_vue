@@ -113,6 +113,15 @@ export const getTicketById = (id: number): Promise<TicketResponse> => {
 };
 
 /**
+ * 获取车票详情
+ * @param id 车票ID
+ * @returns 车票详情
+ */
+export const getTicketDetailById = (id: number): Promise<any> => {
+  return get(`/tickets/detail/${id}`);
+};
+
+/**
  * 获取订单的车票列表
  * @param orderId 订单ID
  * @returns 车票列表
@@ -121,13 +130,31 @@ export const getTicketsByOrderId = (orderId: number): Promise<TicketResponse[]> 
   return get(`/tickets/order/${orderId}`);
 };
 
+export interface UpdateTicketRequest {
+  id: number;
+  status: number;
+  orderId: number;
+  userId: number;
+}
+/**
+ * 更新车票
+ * @param ticketId 车票ID
+ * @returns 取消车票的结果
+ */
+export const updateTicketStatus = (updateTicketRequest: UpdateTicketRequest): Promise<TicketResponse> => {
+  return put('/tickets/status', updateTicketRequest);
+}
+
+
+
 export default {
   createTicket,
   createTickets,
   getTicketById,
   getTicketsByOrderId,
+  updateTicketStatus,
   SeatType,
   SeatTypeNameMap,
   TicketStatus,
-  TicketStatusNameMap
+  TicketStatusNameMap,
 };

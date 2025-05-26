@@ -182,7 +182,7 @@ const routes: Array<RouteRecordRaw> = [
         }
       },
       {
-        path: 'order/change/:id',
+        path: 'ticket/change/:id',
         name: 'TicketChange',
         component: () => import('@/views/user/TicketChange.vue'),
         meta: {

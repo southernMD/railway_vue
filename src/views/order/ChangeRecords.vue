@@ -70,8 +70,8 @@
 
       <!-- 改签记录表格 -->
       <el-table
-        v-if="filteredChangeRecords.length > 0"
-        :data="filteredChangeRecords"
+        v-if="changeRecords.length > 0"
+        :data="changeRecords"
         border
         stripe
         style="width: 100%"
@@ -80,52 +80,57 @@
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column label="乘客信息" width="120">
           <template #default="scope">
-            {{ scope.row.ticket.passenger.realName }}
+            {{ scope.row.newTicket?.passenger?.realName || '未知' }}
           </template>
         </el-table-column>
         <el-table-column label="原车次/日期" width="160">
           <template #default="scope">
-            <div>{{ scope.row.ticket.train.trainNumber }}</div>
-            <div class="text-muted">{{ scope.row.ticket.date }}</div>
+            <div v-if="scope.row.originalTicket">
+              <div>{{ scope.row.originalTicket.train.trainNumber }}</div>
+              <div class="text-muted">{{ scope.row.originalTicket.date }}</div>
+            </div>
+            <div v-else class="text-muted">无原始车票信息</div>
           </template>
         </el-table-column>
         <el-table-column label="原行程" min-width="180">
           <template #default="scope">
-            <div>
-              {{ scope.row.ticket.departureStation.stationName }} → 
-              {{ scope.row.ticket.arrivalStation.stationName }}
+            <div v-if="scope.row.originalTicket">
+              {{ scope.row.originalTicket.departureStation.stationName }} → 
+              {{ scope.row.originalTicket.arrivalStation.stationName }}
             </div>
+            <div v-else class="text-muted">无原始行程信息</div>
           </template>
         </el-table-column>
         <el-table-column label="新车次/日期" width="160">
           <template #default="scope">
-            <div>{{ scope.row.newTicket.train.trainNumber }}</div>
-            <div class="text-muted">{{ scope.row.newTicket.date }}</div>
+            <div>{{ scope.row.newTicket?.train?.trainNumber || '未知' }}</div>
+            <div class="text-muted">{{ scope.row.newTicket?.date || '未知' }}</div>
           </template>
         </el-table-column>
         <el-table-column label="新行程" min-width="180">
           <template #default="scope">
             <div>
-              {{ scope.row.newTicket.departureStation.stationName }} → 
-              {{ scope.row.newTicket.arrivalStation.stationName }}
+              {{ scope.row.newTicket?.departureStation?.stationName || '未知' }} → 
+              {{ scope.row.newTicket?.arrivalStation?.stationName || '未知' }}
             </div>
           </template>
         </el-table-column>
         <el-table-column label="座位类型" width="140">
           <template #default="scope">
             <div class="seat-change">
-              <span>{{ getSeatTypeName(scope.row.ticket.seatType) }}</span>
+              <span v-if="scope.row.originalTicket">{{ getSeatTypeName(scope.row.originalTicket.seatType) }}</span>
+              <span v-else class="text-muted">未知</span>
               <el-icon class="arrow-icon"><ArrowRight /></el-icon>
-              <span>{{ getSeatTypeName(scope.row.newTicket.seatType) }}</span>
+              <span>{{ getSeatTypeName(scope.row.newTicket?.seatType) }}</span>
             </div>
           </template>
         </el-table-column>
         <el-table-column label="费用信息" width="150">
           <template #default="scope">
             <div>票价差: <span :class="{'text-positive': scope.row.priceDifference >= 0, 'text-negative': scope.row.priceDifference < 0}">
-              {{ scope.row.priceDifference >= 0 ? '+' : '' }}{{ scope.row.priceDifference.toFixed(2) }}
+              {{ scope.row.priceDifference >= 0 ? '+' : '' }}¥{{ formatPrice(scope.row.priceDifference) }}
             </span></div>
-            <div>手续费: ¥{{ scope.row.changeFee.toFixed(2) }}</div>
+            <div>手续费: ¥{{ formatPrice(scope.row.changeFee) }}</div>
           </template>
         </el-table-column>
         <el-table-column label="状态" width="100">
@@ -177,8 +182,8 @@
         <el-descriptions :column="2" border>
           <el-descriptions-item label="改签ID">{{ selectedRecord.id }}</el-descriptions-item>
           <el-descriptions-item label="订单ID">{{ selectedRecord.orderId }}</el-descriptions-item>
-          <el-descriptions-item label="乘客姓名">{{ selectedRecord.ticket.passenger.realName }}</el-descriptions-item>
-          <el-descriptions-item label="证件号码">{{ selectedRecord.ticket.passenger.idCard }}</el-descriptions-item>
+          <el-descriptions-item label="乘客姓名">{{ selectedRecord.newTicket?.passenger?.realName || '未知' }}</el-descriptions-item>
+          <el-descriptions-item label="证件号码">{{ selectedRecord.newTicket?.passenger?.idCard || '未知' }}</el-descriptions-item>
           <el-descriptions-item label="改签原因" :span="2">
             {{ selectedRecord.reason || '无' }}
           </el-descriptions-item>
@@ -187,7 +192,8 @@
         <div class="ticket-comparison">
           <h3>车票对比</h3>
           <div class="comparison-container">
-            <div class="ticket-card original">
+            <!-- 原车票信息 -->
+            <div class="ticket-card original" v-if="selectedRecord.originalTicket">
               <div class="ticket-header">
                 <h4>原车票</h4>
                 <el-tag type="info">已改签</el-tag>
@@ -196,37 +202,51 @@
                 <div class="ticket-info">
                   <div class="ticket-row">
                     <span class="label">车票号:</span>
-                    <span class="value">{{ selectedRecord.ticket.ticketNo }}</span>
+                    <span class="value">{{ selectedRecord.originalTicket.ticketNo }}</span>
                   </div>
                   <div class="ticket-row highlight">
                     <span class="label">车次:</span>
-                    <span class="value">{{ selectedRecord.ticket.train.trainNumber }}</span>
+                    <span class="value">{{ selectedRecord.originalTicket.train.trainNumber }}</span>
                   </div>
                   <div class="ticket-row highlight">
                     <span class="label">日期:</span>
-                    <span class="value">{{ selectedRecord.ticket.date }}</span>
+                    <span class="value">{{ selectedRecord.originalTicket.date }}</span>
                   </div>
                   <div class="ticket-row">
                     <span class="label">出发站:</span>
-                    <span class="value">{{ selectedRecord.ticket.departureStation.stationName }}</span>
+                    <span class="value">{{ selectedRecord.originalTicket.departureStation.stationName }}</span>
                   </div>
                   <div class="ticket-row">
                     <span class="label">到达站:</span>
-                    <span class="value">{{ selectedRecord.ticket.arrivalStation.stationName }}</span>
+                    <span class="value">{{ selectedRecord.originalTicket.arrivalStation.stationName }}</span>
                   </div>
                   <div class="ticket-row highlight">
                     <span class="label">座位类型:</span>
-                    <span class="value">{{ getSeatTypeName(selectedRecord.ticket.seatType) }}</span>
+                    <span class="value">{{ getSeatTypeName(selectedRecord.originalTicket.seatType) }}</span>
                   </div>
                   <div class="ticket-row">
                     <span class="label">座位号:</span>
-                    <span class="value">{{ selectedRecord.ticket.carriage.carriageNumber }}车{{ selectedRecord.ticket.seat.seatNumber }}</span>
+                    <span class="value">{{ selectedRecord.originalTicket.carriage.carriageNumber }}车{{ selectedRecord.originalTicket.seat.seatNumber }}</span>
                   </div>
                   <div class="ticket-row highlight">
                     <span class="label">票价:</span>
-                    <span class="value">¥{{ selectedRecord.ticket.price.toFixed(2) }}</span>
+                    <span class="value">¥{{ formatPrice(selectedRecord.originalTicket.price) }}</span>
+                  </div>
+                  <div class="ticket-row" v-if="selectedRecord.originalTicket.refundAmount !== null">
+                    <span class="label">退款金额:</span>
+                    <span class="value">¥{{ formatPrice(selectedRecord.originalTicket.refundAmount) }}</span>
                   </div>
                 </div>
+              </div>
+            </div>
+            
+            <!-- 如果没有原车票信息，显示提示 -->
+            <div class="ticket-card original" v-else>
+              <div class="ticket-header">
+                <h4>原车票</h4>
+              </div>
+              <div class="ticket-body empty">
+                <div class="empty-message">无原始车票信息</div>
               </div>
             </div>
             
@@ -234,69 +254,70 @@
               <el-icon><ArrowRight /></el-icon>
             </div>
             
+            <!-- 新车票信息 -->
             <div class="ticket-card new">
               <div class="ticket-header">
                 <h4>新车票</h4>
-                <el-tag :type="getTicketStatusType(selectedRecord.newTicket.status)">
-                  {{ getTicketStatusName(selectedRecord.newTicket.status) }}
+                <el-tag :type="getTicketStatusType(selectedRecord.newTicket?.status)">
+                  {{ getTicketStatusName(selectedRecord.newTicket?.status) }}
                 </el-tag>
               </div>
               <div class="ticket-body">
                 <div class="ticket-info">
                   <div class="ticket-row">
                     <span class="label">车票号:</span>
-                    <span class="value">{{ selectedRecord.newTicket.ticketNo }}</span>
+                    <span class="value">{{ selectedRecord.newTicket?.ticketNo || '未知' }}</span>
                   </div>
                   <div class="ticket-row highlight">
                     <span class="label">车次:</span>
-                    <span class="value">{{ selectedRecord.newTicket.train.trainNumber }}</span>
+                    <span class="value">{{ selectedRecord.newTicket?.train?.trainNumber || '未知' }}</span>
                   </div>
                   <div class="ticket-row highlight">
                     <span class="label">日期:</span>
-                    <span class="value">{{ selectedRecord.newTicket.date }}</span>
+                    <span class="value">{{ selectedRecord.newTicket?.date || '未知' }}</span>
                   </div>
                   <div class="ticket-row">
                     <span class="label">出发站:</span>
-                    <span class="value">{{ selectedRecord.newTicket.departureStation.stationName }}</span>
+                    <span class="value">{{ selectedRecord.newTicket?.departureStation?.stationName || '未知' }}</span>
                   </div>
                   <div class="ticket-row">
                     <span class="label">到达站:</span>
-                    <span class="value">{{ selectedRecord.newTicket.arrivalStation.stationName }}</span>
+                    <span class="value">{{ selectedRecord.newTicket?.arrivalStation?.stationName || '未知' }}</span>
                   </div>
                   <div class="ticket-row highlight">
                     <span class="label">座位类型:</span>
-                    <span class="value">{{ getSeatTypeName(selectedRecord.newTicket.seatType) }}</span>
+                    <span class="value">{{ getSeatTypeName(selectedRecord.newTicket?.seatType) }}</span>
                   </div>
                   <div class="ticket-row">
                     <span class="label">座位号:</span>
-                    <span class="value">{{ selectedRecord.newTicket.carriage.carriageNumber }}车{{ selectedRecord.newTicket.seat.seatNumber }}</span>
+                    <span class="value">{{ selectedRecord.newTicket?.carriage?.carriageNumber || '未知' }}车{{ selectedRecord.newTicket?.seat?.seatNumber || '未知' }}</span>
                   </div>
                   <div class="ticket-row highlight">
                     <span class="label">票价:</span>
-                    <span class="value">¥{{ selectedRecord.newTicket.price.toFixed(2) }}</span>
+                    <span class="value">¥{{ formatPrice(selectedRecord.newTicket?.price) }}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
+        
         <div class="fee-summary">
           <h3>费用信息</h3>
           <div class="fee-details">
             <div class="fee-row">
               <span class="label">票价差额:</span>
               <span class="value" :class="{'text-positive': selectedRecord.priceDifference >= 0, 'text-negative': selectedRecord.priceDifference < 0}">
-                {{ selectedRecord.priceDifference >= 0 ? '+' : '' }}¥{{ selectedRecord.priceDifference.toFixed(2) }}
+                {{ selectedRecord.priceDifference >= 0 ? '+' : '' }}¥{{ formatPrice(selectedRecord.priceDifference) }}
               </span>
             </div>
             <div class="fee-row">
               <span class="label">改签手续费:</span>
-              <span class="value">¥{{ selectedRecord.changeFee.toFixed(2) }}</span>
+              <span class="value">¥{{ formatPrice(selectedRecord.changeFee) }}</span>
             </div>
             <div class="fee-row total">
               <span class="label">合计:</span>
-              <span class="value">¥{{ (selectedRecord.priceDifference + selectedRecord.changeFee).toFixed(2) }}</span>
+              <span class="value">¥{{ formatPrice(selectedRecord.priceDifference + selectedRecord.changeFee) }}</span>
             </div>
           </div>
         </div>
@@ -315,7 +336,62 @@
 import { ref, reactive, computed, onMounted } from "vue";
 import { Refresh, SetUp, ArrowRight, Timer } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
-import { getChangeRecords, type ChangeRecord } from "@/api/change-records";
+import { getChangeRecords } from "@/api/change-records";
+
+// 定义新的数据结构，与API实际返回匹配
+interface ChangeRecord {
+  id: number;
+  originalTicket: Ticket | null; // 原车票
+  newTicket: Ticket;            // 新车票
+  orderId: number;              // 订单ID
+  changeFee: number;            // 改签费用
+  priceDifference: number;      // 票价差额
+  status: number;               // 状态：0-处理中，1-改签成功，2-改签取消
+  reason: string | null;        // 改签原因
+}
+
+// 车票接口定义
+interface Ticket {
+  id: number;
+  ticketNo: string;
+  orderId: number;
+  passenger: {
+    id: number;
+    realName: string;
+    idCard: string;
+    phone: string;
+    passengerType: number;
+  };
+  train: {
+    id: number;
+    trainNumber: string;
+    date: string;
+    departureTime: string;
+    arrivalTime: string;
+  };
+  date: string;
+  departureStation: {
+    id: number;
+    stationName: string;
+  };
+  arrivalStation: {
+    id: number;
+    stationName: string;
+  };
+  seatType: number;
+  carriage: {
+    id: number;
+    carriageNumber: number;
+  };
+  seat: {
+    id: number;
+    seatNumber: string;
+  };
+  price: number;
+  status: number;
+  refundAmount: number | null;
+  refundTime: string | null;
+}
 
 // 改签记录列表数据
 const changeRecords = ref<ChangeRecord[]>([]);
@@ -338,308 +414,54 @@ const changeStatusOptions = {
   2: "改签取消"
 };
 
-// 伪造的数据
-const mockChangeRecord = {
-  id: 1001,
-  ticket: {
-    createTime: "2025-05-25T05:31:58.391Z",
-    updateTime: "2025-05-25T05:31:58.391Z",
-    id: 2001,
-    ticketNo: "T20250525001",
-    orderId: 3001,
-    passenger: {
-      createTime: "2025-05-25T05:31:58.391Z",
-      updateTime: "2025-05-25T05:31:58.391Z",
-      id: 4001,
-      user: {
-        createTime: "2025-05-25T05:31:58.391Z",
-        updateTime: "2025-05-25T05:31:58.391Z",
-        id: 5001,
-        username: "zhangsan",
-        email: "zhangsan@example.com",
-        userType: 0,
-        status: 0
-      },
-      realName: "张三",
-      idCard: "110101199001011234",
-      phone: "13800138000",
-      passengerType: 0,
-      isDefault: 1
-    },
-    train: {
-      createTime: "2025-05-25T05:31:58.391Z",
-      updateTime: "2025-05-25T05:31:58.391Z",
-      id: 6001,
-      trainNumber: "G101",
-      model: {
-        createTime: "2025-05-25T05:31:58.391Z",
-        updateTime: "2025-05-25T05:31:58.391Z",
-        id: 7001,
-        modelName: "复兴号",
-        modelCode: "CR400AF",
-        maxCapacity: 576
-      },
-      startStation: {
-        createTime: "2025-05-25T05:31:58.391Z",
-        updateTime: "2025-05-25T05:31:58.391Z",
-        id: 8001,
-        stationName: "北京南站",
-        city: "北京",
-        province: "北京",
-        address: "北京市丰台区永外大街",
-        status: 0
-      },
-      endStation: {
-        createTime: "2025-05-25T05:31:58.391Z",
-        updateTime: "2025-05-25T05:31:58.391Z",
-        id: 8002,
-        stationName: "上海虹桥站",
-        city: "上海",
-        province: "上海",
-        address: "上海市闵行区申虹路",
-        status: 0
-      },
-      date: "2025-05-25",
-      departureTime: {
-        hour: 8,
-        minute: 0,
-        second: 0,
-        nano: 0
-      },
-      arrivalTime: {
-        hour: 13,
-        minute: 0,
-        second: 0,
-        nano: 0
-      },
-      trainSeatInfo: {
-        createTime: "2025-05-25T05:31:58.391Z",
-        updateTime: "2025-05-25T05:31:58.391Z",
-        id: 9001,
-        noSeatTickets: 10,
-        businessPrice: 1500,
-        firstClassPrice: 900,
-        secondClassPrice: 550,
-        noSeatPrice: 300
-      },
-      trainStops: []
-    },
-    date: "2025-05-25",
-    departureStation: {
-      createTime: "2025-05-25T05:31:58.391Z",
-      updateTime: "2025-05-25T05:31:58.391Z",
-      id: 8001,
-      stationName: "北京南站",
-      city: "北京",
-      province: "北京",
-      address: "北京市丰台区永外大街",
-      status: 0
-    },
-    arrivalStation: {
-      createTime: "2025-05-25T05:31:58.391Z",
-      updateTime: "2025-05-25T05:31:58.391Z",
-      id: 8002,
-      stationName: "上海虹桥站",
-      city: "上海",
-      province: "上海",
-      address: "上海市闵行区申虹路",
-      status: 0
-    },
-    seatType: 1, // 一等座
-    carriage: {
-      createTime: "2025-05-25T05:31:58.391Z",
-      updateTime: "2025-05-25T05:31:58.391Z",
-      id: 10001,
-      modelId: 7001,
-      carriageNumber: 3,
-      carriageType: 1
-    },
-    seat: {
-      createTime: "2025-05-25T05:31:58.391Z",
-      updateTime: "2025-05-25T05:31:58.391Z",
-      id: 11001,
-      carriageId: 10001,
-      seatNumber: "5A",
-      status: 0,
-      lockInfo: []
-    },
-    price: 900,
-    status: 3, // 已改签
-    refundAmount: 0,
-    refundTime: null
-  },
-  newTicket: {
-    createTime: "2025-05-25T05:31:58.391Z",
-    updateTime: "2025-05-25T05:31:58.391Z",
-    id: 2002,
-    ticketNo: "T20250526001",
-    orderId: 3001,
-    passenger: {
-      createTime: "2025-05-25T05:31:58.391Z",
-      updateTime: "2025-05-25T05:31:58.391Z",
-      id: 4001,
-      user: {
-        createTime: "2025-05-25T05:31:58.391Z",
-        updateTime: "2025-05-25T05:31:58.391Z",
-        id: 5001,
-        username: "zhangsan",
-        email: "zhangsan@example.com",
-        userType: 0,
-        status: 0
-      },
-      realName: "张三",
-      idCard: "110101199001011234",
-      phone: "13800138000",
-      passengerType: 0,
-      isDefault: 1
-    },
-    train: {
-      createTime: "2025-05-25T05:31:58.391Z",
-      updateTime: "2025-05-25T05:31:58.391Z",
-      id: 6002,
-      trainNumber: "G103",
-      model: {
-        createTime: "2025-05-25T05:31:58.391Z",
-        updateTime: "2025-05-25T05:31:58.391Z",
-        id: 7001,
-        modelName: "复兴号",
-        modelCode: "CR400AF",
-        maxCapacity: 576
-      },
-      startStation: {
-        createTime: "2025-05-25T05:31:58.391Z",
-        updateTime: "2025-05-25T05:31:58.391Z",
-        id: 8001,
-        stationName: "北京南站",
-        city: "北京",
-        province: "北京",
-        address: "北京市丰台区永外大街",
-        status: 0
-      },
-      endStation: {
-        createTime: "2025-05-25T05:31:58.391Z",
-        updateTime: "2025-05-25T05:31:58.391Z",
-        id: 8002,
-        stationName: "上海虹桥站",
-        city: "上海",
-        province: "上海",
-        address: "上海市闵行区申虹路",
-        status: 0
-      },
-      date: "2025-05-26", // 改签到第二天
-      departureTime: {
-        hour: 9,
-        minute: 30,
-        second: 0,
-        nano: 0
-      },
-      arrivalTime: {
-        hour: 14,
-        minute: 30,
-        second: 0,
-        nano: 0
-      },
-      trainSeatInfo: {
-        createTime: "2025-05-25T05:31:58.391Z",
-        updateTime: "2025-05-25T05:31:58.391Z",
-        id: 9002,
-        noSeatTickets: 5,
-        businessPrice: 1600,
-        firstClassPrice: 950,
-        secondClassPrice: 580,
-        noSeatPrice: 320
-      },
-      trainStops: []
-    },
-    date: "2025-05-26",
-    departureStation: {
-      createTime: "2025-05-25T05:31:58.391Z",
-      updateTime: "2025-05-25T05:31:58.391Z",
-      id: 8001,
-      stationName: "北京南站",
-      city: "北京",
-      province: "北京",
-      address: "北京市丰台区永外大街",
-      status: 0
-    },
-    arrivalStation: {
-      createTime: "2025-05-25T05:31:58.391Z",
-      updateTime: "2025-05-25T05:31:58.391Z",
-      id: 8002,
-      stationName: "上海虹桥站",
-      city: "上海",
-      province: "上海",
-      address: "上海市闵行区申虹路",
-      status: 0
-    },
-    seatType: 0, // 商务座
-    carriage: {
-      createTime: "2025-05-25T05:31:58.391Z",
-      updateTime: "2025-05-25T05:31:58.391Z",
-      id: 10002,
-      modelId: 7001,
-      carriageNumber: 1,
-      carriageType: 0
-    },
-    seat: {
-      createTime: "2025-05-25T05:31:58.391Z",
-      updateTime: "2025-05-25T05:31:58.391Z",
-      id: 11002,
-      carriageId: 10002,
-      seatNumber: "2C",
-      status: 0,
-      lockInfo: []
-    },
-    price: 1600,
-    status: 0, // 未使用
-    refundAmount: 0,
-    refundTime: null
-  },
-  orderId: 3001,
-  changeFee: 50, // 改签手续费
-  priceDifference: 700, // 票价差额，正数表示需要补票价差
-  status: 1, // 改签成功
-  reason: "行程变更，需要推迟一天出行"
-};
-
-// 本地筛选后的数据（实现前端筛选）
-const filteredChangeRecords = computed(() => {
-  return changeRecords.value.filter(item => {
-    // 筛选改签ID
-    if (filterForm.changeNo && item.id.toString() !== filterForm.changeNo) {
-      return false;
+// 获取改签记录数据
+const fetchChangeRecordsData = async () => {
+  loading.value = true;
+  try {
+    // 构建查询参数
+    const queryParams: any = {};
+    
+    // 转换改签编号到ID
+    if (filterForm.changeNo) {
+      queryParams.id = Number(filterForm.changeNo);
     }
     
-    // 筛选用户名
-    if (filterForm.username && 
-        !item.ticket.passenger.user.username.toLowerCase().includes(filterForm.username.toLowerCase())) {
-      return false;
+    // 添加用户名筛选
+    if (filterForm.username) {
+      queryParams.username = filterForm.username;
     }
     
-    // 筛选状态
-    if (filterForm.status !== null && item.status !== filterForm.status) {
-      return false;
+    // 添加状态筛选
+    if (filterForm.status !== null) {
+      queryParams.status = filterForm.status;
     }
     
-    // 筛选乘车日期
+    // 添加日期范围筛选
     if (dateRange.value && dateRange.value.length === 2) {
-      // 获取原车票和新车票的日期
-      const originalDate = item.ticket.date;
-      const newDate = item.newTicket.date;
-      
-      const startDate = dateRange.value[0];
-      const endDate = dateRange.value[1];
-      
-      // 检查原车票或新车票的日期是否在所选范围内
-      if ((originalDate < startDate || originalDate > endDate) && 
-          (newDate < startDate || newDate > endDate)) {
-        return false;
-      }
+      queryParams.startDate = dateRange.value[0];
+      queryParams.endDate = dateRange.value[1];
     }
     
-    return true;
-  });
-});
+    // 调用API获取数据
+    const response = await getChangeRecords(queryParams);
+    
+    // 处理响应格式，提取data数组
+    if (response && Array.isArray(response)) {
+      changeRecords.value = response;
+    } else if (response && response.data) {
+      changeRecords.value = response.data;
+    } else {
+      changeRecords.value = [];
+      console.warn('API返回数据格式异常:', response);
+    }
+  } catch (error: any) {
+    console.error("获取改签记录失败:", error);
+    ElMessage.error(`获取改签记录失败: ${error.message || '未知错误'}`);
+    changeRecords.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
 
 // 座位类型名称
 const getSeatTypeName = (type: number | undefined) => {
@@ -649,8 +471,37 @@ const getSeatTypeName = (type: number | undefined) => {
     1: "一等座",
     2: "二等座",
     3: "无座",
+    4: "无座"
   };
   return typeMap[type as keyof typeof typeMap] || "未知";
+};
+
+// 获取车票状态名称
+const getTicketStatusName = (status: number | undefined) => {
+  if (status === undefined) return "";
+  const statusMap = {
+    0: "待支付",
+    1: "已出票",
+    2: "已退票",
+    3: "改签处理中",
+    4: "改签待支付",
+    5: "已改签"
+  };
+  return statusMap[status as keyof typeof statusMap] || "未知";
+};
+
+// 获取车票状态标签类型
+const getTicketStatusType = (status: number | undefined) => {
+  if (status === undefined) return "";
+  const typeMap = {
+    0: "warning",   // 待支付
+    1: "success",   // 已出票
+    2: "info",      // 已退票
+    3: "primary",   // 改签处理中
+    4: "warning",   // 改签待支付
+    5: "success",   // 已改签
+  };
+  return typeMap[status as keyof typeof typeMap] || "info";
 };
 
 // 获取改签状态标签类型
@@ -664,61 +515,27 @@ const getStatusTagType = (status: number | undefined) => {
   return typeMap[status as keyof typeof typeMap] || "info";
 };
 
-// 获取车票状态名称
-const getTicketStatusName = (status: number | undefined) => {
-  if (status === undefined) return "";
-  const statusMap = {
-    0: "未使用",
-    1: "已使用",
-    2: "已退票",
-    3: "已改签",
-    4: "已取消"
-  };
-  return statusMap[status as keyof typeof statusMap] || "未知";
-};
-
-// 获取车票状态标签类型
-const getTicketStatusType = (status: number | undefined) => {
-  if (status === undefined) return "";
-  const typeMap = {
-    0: "primary",   // 未使用
-    1: "success",   // 已使用
-    2: "info",      // 已退票
-    3: "warning",   // 已改签
-    4: "danger",    // 已取消
-  };
-  return typeMap[status as keyof typeof typeMap] || "info";
-};
-
-// 获取改签记录数据
-const fetchChangeRecordsData = async () => {
-  loading.value = true;
-  try {
-    // 保留原有的获取数据方式
-    setTimeout(() => {
-      // 使用伪造的数据
-      changeRecords.value = [mockChangeRecord];
-      loading.value = false;
-    }, 500);
-  } catch (error: any) {
-    console.error("获取改签记录失败:", error);
-    ElMessage.error(`获取改签记录失败: ${error.message || '未知错误'}`);
-    loading.value = false;
-  }
-};
-
 // 重置筛选条件
 const resetFilter = () => {
   filterForm.changeNo = "";
   filterForm.username = "";
   filterForm.status = null;
   dateRange.value = null;
+  
+  // 重置后重新获取数据
+  fetchChangeRecordsData();
 };
 
 // 查看详情
 const handleViewDetail = (record: ChangeRecord) => {
   selectedRecord.value = record;
   detailDialogVisible.value = true;
+};
+
+// 格式化金额
+const formatPrice = (price: number | undefined | null) => {
+  if (price === undefined || price === null) return "0.00";
+  return price.toFixed(2);
 };
 
 // 页面加载时获取改签记录
@@ -837,6 +654,18 @@ onMounted(() => {
 
 .ticket-body {
   padding: 15px;
+}
+
+.ticket-body.empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.empty-message {
+  color: #909399;
+  font-style: italic;
 }
 
 .ticket-info {
